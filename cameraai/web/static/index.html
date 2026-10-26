@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CameraAI — Chấm công</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">CameraAI <span class="muted">chấm công bằng camera</span></div>
+  <nav class="tabs">
+    <button data-tab="live" class="active">Trực tiếp</button>
+    <button data-tab="employees">Nhân viên</button>
+    <button data-tab="history">Lịch sử</button>
+    <button data-tab="rejected">Bị từ chối</button>
+  </nav>
+  <div id="cam-badge" class="badge">Đang kết nối…</div>
+</header>
+
+<main>
+  <section id="tab-live" class="tab active">
+    <div class="live-grid">
+      <div class="video-wrap"><img id="live-img" alt="Hình camera"></div>
+      <aside class="panel">
+        <h3>Trạng thái</h3>
+        <dl id="status-list" class="kv"></dl>
+        <h3>Vừa ghi nhận</h3>
+        <ul id="recent-list" class="recent"></ul>
+      </aside>
+    </div>
+  </section>
+
+  <section id="tab-employees" class="tab">
+    <form id="add-form" class="panel row">
+      <input name="code" placeholder="Mã nhân viên" required maxlength="32">
+      <input name="name" placeholder="Họ tên" required maxlength="100">
+      <button type="submit" class="primary">Thêm nhân viên</button>
+    </form>
+    <p class="hint">Cần sự đồng ý của nhân viên trước khi đăng ký khuôn mặt. Nên có ít nhất 3 mẫu mỗi người.</p>
+    <table class="table">
+      <thead><tr><th>Mã</th><th>Tên</th><th>Số mẫu</th><th></th></tr></thead>
+      <tbody id="emp-body"></tbody>
+    </table>
+  </section>
+
+  <section id="tab-history" class="tab">
+    <div class="panel row">
+      <label>Ngày <input type="date" id="hist-date"></label>
+      <button id="hist-refresh">Tải lại</button>
+      <span class="spacer"></span>
+      <label>Từ <input type="date" id="csv-start"></label>
+      <label>Đến <input type="date" id="csv-end"></label>
+      <button id="csv-btn">Xuất CSV</button>
+    </div>
+    <h3>Tổng hợp trong ngày</h3>
+    <table class="table">
+      <thead><tr><th>Mã</th><th>Tên</th><th>Giờ vào</th><th>Giờ ra</th><th>Số lần</th></tr></thead>
+      <tbody id="summary-body"></tbody>
+    </table>
+    <h3>Các lần chấm</h3>
+    <div id="events-grid" class="cards"></div>
+  </section>
+
+  <section id="tab-rejected" class="tab">
+    <div class="panel row">
+      <label>Ngày <input type="date" id="rej-date"></label>
+      <button id="rej-refresh">Tải lại</button>
+    </div>
+    <div id="rejected-grid" class="cards"></div>
+  </section>
+</main>
+
+<dialog id="enroll-dialog">
+  <form method="dialog" class="dialog-head">
+    <h3 id="enroll-title">Đăng ký khuôn mặt</h3>
+    <button class="icon" aria-label="Đóng">✕</button>
+  </form>
+  <div class="enroll-body">
+    <div class="video-wrap small"><img id="enroll-img" alt="Hình camera"></div>
+    <div class="enroll-actions">
+      <button id="capture-btn" class="primary">Chụp từ camera (xoay đầu chậm)</button>
+      <label class="file-btn">Tải ảnh lên<input type="file" id="upload-input" accept="image/*" multiple hidden></label>
+      <div id="enroll-msg" class="msg"></div>
+    </div>
+  </div>
+  <h4>Mẫu đã có</h4>
+  <div id="samples-grid" class="thumbs"></div>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

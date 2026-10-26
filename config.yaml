@@ -1,0 +1,56 @@
+# Cấu hình CameraAI. Biến môi trường ghi đè được: CAMERA_SOURCE, CAMERA_ID, CAMERAAI_HOST,
+# CAMERAAI_PORT, ADMIN_PASSWORD, CAMERAAI_DATA_DIR, LIVENESS_ENABLED.
+timezone: Asia/Ho_Chi_Minh
+models_dir: models
+
+camera:
+  # "0" = webcam laptop. IP camera: rtsp://user:pass@192.168.1.64:554/Streaming/Channels/102
+  # Hoặc đường dẫn file video .mp4 để phát lại.
+  source: "0"
+  id: laptop            # tên camera, ghi vào mỗi lần chấm
+  width: 1280           # chỉ áp dụng cho webcam
+  height: 720
+
+processing:
+  fps: 8                # số frame xử lý mỗi giây
+  detect_width: 640     # thu nhỏ frame về bề rộng này để phát hiện mặt (nhanh hơn)
+
+recognition:
+  # sface (mặc định, giấy phép thương mại được) | arcface (chính xác hơn ở góc nghiêng; CHỈ để đánh giá —
+  # dùng thật cần mua license InsightFace). Tải arcface: python -m cameraai.model_store download --arcface
+  model: sface
+  sface_threshold: 0.363    # ngưỡng cosine; tăng để chặt hơn (ít nhận nhầm, dễ không nhận ra)
+  arcface_threshold: 0.30   # tạm, chốt lại bằng: python -m cameraai.evaluate
+  detect_score: 0.8     # độ tin cậy tối thiểu của bộ phát hiện mặt
+  min_face_px: 40       # cạnh mặt tối thiểu để nhận diện (pixel trên frame gốc)
+  min_sharpness: 12     # độ nét tối thiểu (phương sai Laplacian)
+  max_turn: 0.45        # độ quay ngang tối đa để nhận diện (0 = nhìn thẳng); đo: 0,30–0,45 vẫn nhận tốt
+
+liveness:
+  # off | opportunistic (chỉ kiểm khi mặt đủ to và gần thẳng; không kiểm được vẫn chấm, ghi "chưa kiểm")
+  # | required (chỉ chấm khi đã kiểm là mặt thật)
+  mode: opportunistic
+  threshold: 0.5        # frame có xác suất mặt thật >= ngưỡng này được coi là "thật"
+  spoof_threshold: 0.3  # ghi "giả mạo" khi điểm TRUNG BÌNH 5 frame đã kiểm thấp hơn ngưỡng này
+  min_face_px: 64       # model chống giả cần mặt >= 64 px
+  max_turn: 0.25        # và gần thẳng (±30°)
+
+attendance:
+  window_frames: 5      # số quan sát gần nhất xét cho mỗi khuôn mặt
+  confirm_frames: 3     # cần ít nhất chừng này quan sát khớp cùng một người
+  cooldown_minutes: 5   # không ghi lại cùng người trong khoảng này
+
+enrollment:
+  samples_per_capture: 8   # mỗi lượt "Chụp từ camera"
+  capture_timeout_s: 15
+  min_face_px: 80          # mặt nhỏ hơn (hậu cảnh) không tính; camera trần ở xa nên giảm còn ~50
+  min_det_score: 0.9
+  max_similarity: 0.92     # chỉ nhận mẫu khác đủ so với mẫu đã có -> xoay đầu chậm khi chụp
+
+storage:
+  data_dir: data
+  snapshot_retention_days: 30   # ảnh chụp cũ hơn số ngày này sẽ bị xoá
+
+web:
+  host: 127.0.0.1       # 0.0.0.0 để máy khác trong LAN truy cập (bắt buộc ADMIN_PASSWORD)
+  port: 8000

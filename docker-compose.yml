@@ -1,0 +1,10 @@
+services:
+  cameraai:
+    build: .
+    image: cameraai:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data   # DB, ảnh mẫu, ảnh chụp — chép từ laptop sang để giữ danh sách đã đăng ký
