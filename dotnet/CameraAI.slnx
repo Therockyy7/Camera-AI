@@ -6,6 +6,7 @@
     <Project Path="src/CameraAI.Web/CameraAI.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/CameraAI.Application.Tests/CameraAI.Application.Tests.csproj" />
     <Project Path="tests/CameraAI.Domain.Tests/CameraAI.Domain.Tests.csproj" />
   </Folder>
 </Solution>
