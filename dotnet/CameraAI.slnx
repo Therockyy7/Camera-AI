@@ -9,5 +9,6 @@
     <Project Path="tests/CameraAI.Application.Tests/CameraAI.Application.Tests.csproj" />
     <Project Path="tests/CameraAI.Domain.Tests/CameraAI.Domain.Tests.csproj" />
     <Project Path="tests/CameraAI.Infrastructure.Tests/CameraAI.Infrastructure.Tests.csproj" />
+    <Project Path="tests/CameraAI.Web.Tests/CameraAI.Web.Tests.csproj" />
   </Folder>
 </Solution>

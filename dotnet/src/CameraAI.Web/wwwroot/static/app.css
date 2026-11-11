@@ -1,0 +1,95 @@
+:root {
+  --bg: #f5f6f8; --panel: #fff; --text: #1d2330; --muted: #6b7385; --line: #e3e6ec;
+  --accent: #2563eb; --accent-bg: #eef2ff;
+  --ok: #15803d; --ok-bg: #dcfce7; --bad: #b91c1c; --bad-bg: #fee2e2; --warn: #a16207; --warn-bg: #fef3c7;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+h3 { font-size: 14px; margin: 18px 0 8px; }
+h4 { font-size: 13px; margin: 16px 0 8px; }
+.muted { color: var(--muted); font-weight: 400; }
+
+.topbar { display: flex; align-items: center; gap: 16px; padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 16px; }
+.tabs { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+.tabs button { border: 0; background: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; color: var(--muted); font: inherit; }
+.tabs button.active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; background: var(--line); }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.bad { background: var(--bad-bg); color: var(--bad); }
+
+main { padding: 20px; max-width: 1280px; margin: 0 auto; }
+.tab { display: none; }
+.tab.active { display: block; }
+
+.live-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.video-wrap { background: #111; border-radius: var(--radius); overflow: hidden; aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; }
+.video-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.video-wrap.small { width: 360px; max-width: 100%; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.panel h3:first-child { margin-top: 0; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; word-break: break-all; }
+.recent { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.recent li { padding: 8px 10px; border-radius: 8px; background: var(--bg); display: flex; flex-direction: column; }
+.recent li.attendance { background: var(--ok-bg); }
+.recent li.spoof, .recent li.unknown { background: var(--bad-bg); }
+.recent li span { font-size: 12px; color: var(--muted); }
+
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+input { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); }
+button, .file-btn { font: inherit; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); cursor: pointer; }
+button:hover, .file-btn:hover { border-color: #c7ccd6; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { color: var(--bad); }
+button:disabled { opacity: .6; cursor: wait; }
+button.icon { border: 0; background: none; padding: 2px 6px; }
+.file-btn { text-align: center; }
+.hint { color: var(--muted); font-size: 13px; }
+
+.table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.table th, .table td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+.table th { background: #fafbfc; color: var(--muted); font-weight: 600; font-size: 12px; }
+.table td.actions { text-align: right; white-space: nowrap; }
+.table td.actions button { margin-left: 6px; }
+.empty { color: var(--muted); text-align: center; padding: 16px; }
+.pill { display: inline-block; min-width: 28px; text-align: center; padding: 1px 8px; border-radius: 999px; font-size: 12px; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.card { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.card img, .card .noimg { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #eee; }
+.card .noimg { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; }
+.card figcaption { padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.card figcaption span { font-size: 12px; color: var(--muted); }
+
+dialog { border: 0; border-radius: 14px; padding: 18px 20px; width: min(720px, calc(100vw - 32px)); box-shadow: 0 20px 60px rgba(0, 0, 0, .25); }
+dialog::backdrop { background: rgba(15, 20, 30, .45); }
+.dialog-head { display: flex; justify-content: space-between; align-items: center; }
+.dialog-head h3 { margin: 0; }
+.enroll-body { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+.enroll-actions { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 200px; }
+.msg { font-size: 13px; }
+.msg .ok { color: var(--ok); }
+.msg .bad { color: var(--bad); }
+.thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
+.thumbs figure { margin: 0; width: 96px; }
+.thumbs img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; display: block; }
+.thumbs figcaption { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border-radius: 10px; background: #1d2330; color: #fff; z-index: 20; }
+.toast.ok { background: var(--ok); }
+.toast.bad { background: var(--bad); }
+
+@media (max-width: 900px) { .live-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  main { padding: 16px; }
+  .topbar { padding: 10px 16px; }
+  .table td.actions { white-space: normal; }
+  .table td.actions button { margin: 4px 0 0 6px; }
+}
