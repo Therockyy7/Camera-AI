@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CameraAI.Application/CameraAI.Application.csproj" />
+    <Project Path="src/CameraAI.Domain/CameraAI.Domain.csproj" />
+    <Project Path="src/CameraAI.Infrastructure/CameraAI.Infrastructure.csproj" />
+    <Project Path="src/CameraAI.Web/CameraAI.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CameraAI.Domain.Tests/CameraAI.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
