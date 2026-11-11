@@ -2,6 +2,8 @@ using CameraAI.Application.Abstractions;
 using CameraAI.Application.Common;
 using CameraAI.Infrastructure.Files;
 using CameraAI.Infrastructure.Persistence;
+using CameraAI.Infrastructure.Video;
+using CameraAI.Infrastructure.Vision;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -15,7 +17,31 @@ namespace CameraAI.Infrastructure;
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services) =>
-        services.AddPersistence();
+        services.AddPersistence().AddVision();
+
+    public static IServiceCollection AddVision(this IServiceCollection services)
+    {
+        // Camera: MỘT object đóng 2 vai — IVideoSource (Application đọc frame) + IHostedService (host tự Start/Stop).
+        // Đăng ký class một lần rồi CHUYỂN TIẾP cả hai interface về nó; viết AddHostedService<OpenCvVideoSource>()
+        // riêng sẽ tạo object THỨ HAI mở camera lần nữa (webcam bị khoá → lỗi).
+        services.AddSingleton<OpenCvVideoSource>();
+        services.AddSingleton<IVideoSource>(sp => sp.GetRequiredService<OpenCvVideoSource>());
+        services.AddHostedService(sp => sp.GetRequiredService<OpenCvVideoSource>());
+
+        services.AddSingleton<IFrameImaging, OpenCvImaging>();
+
+        // KEYED SERVICES: đăng ký mọi họ model, mỗi họ một khoá; chọn họ theo config lúc chạy.
+        services.AddKeyedSingleton<IRecognitionModelFamily, SFaceFamily>("sface");
+        services.AddKeyedSingleton<IRecognitionModelFamily, ArcFaceFamily>("arcface");
+        services.AddSingleton<IFaceAnalyzerFactory>(sp =>
+        {
+            var model = sp.GetRequiredService<IOptions<CameraAiOptions>>().Value.Recognition.Model;
+            var family = sp.GetKeyedService<IRecognitionModelFamily>(model)
+                ?? throw new InvalidOperationException($"Không có model nhận diện '{model}' (chọn: sface | arcface)");
+            return ActivatorUtilities.CreateInstance<FaceAnalyzerFactory>(sp, family);
+        });
+        return services;
+    }
 
     public static IServiceCollection AddPersistence(this IServiceCollection services)
     {
