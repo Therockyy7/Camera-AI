@@ -18,7 +18,7 @@ internal sealed class MiniFasLiveness : IDisposable
 
     public MiniFasLiveness(string modelPath)
     {
-        _session = new InferenceSession(modelPath, new SessionOptions { IntraOpNumThreads = 2 });
+        _session = new InferenceSession(modelPath, OnnxSessions.Options(threads: 2));
         _input = _session.InputMetadata.Keys.First();
     }
 

@@ -61,6 +61,16 @@ internal sealed class ArcFaceTemplateAligner : IFaceAligner
     public Mat Align(Mat frame, IReadOnlyList<Point2f> landmarks) => ImageOps.AlignTo112(frame, landmarks);
 }
 
+internal static class OnnxSessions
+{
+    /// <summary>
+    /// Chỉ log từ mức Error: file SFace của OpenCV Zoo khiến ONNX Runtime in hàng chục cảnh báo vô hại
+    /// "Initializer … appears in graph inputs" mỗi lần nạp.
+    /// </summary>
+    public static SessionOptions Options(int threads) =>
+        new() { IntraOpNumThreads = threads, LogSeverityLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR };
+}
+
 /// <summary>Chạy model nhận diện ONNX bằng ONNX Runtime: ảnh 112×112 → vector đặc trưng (128 hoặc 512 số).</summary>
 internal sealed class OnnxFaceEmbedder : IFaceEmbedder
 {
@@ -70,7 +80,7 @@ internal sealed class OnnxFaceEmbedder : IFaceEmbedder
 
     public OnnxFaceEmbedder(string modelPath, float mean, float scale, int threads)
     {
-        _session = new InferenceSession(modelPath, new SessionOptions { IntraOpNumThreads = threads });
+        _session = new InferenceSession(modelPath, OnnxSessions.Options(threads));
         _input = _session.InputMetadata.Keys.First();
         (_mean, _scale) = (mean, scale);
     }
