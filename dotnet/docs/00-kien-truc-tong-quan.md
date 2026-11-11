@@ -82,7 +82,7 @@ Cả hai phụ thuộc vào abstraction → chiều phụ thuộc **bị đảo 
 | `pipeline.py`, `enrollment.py`, `sync.py` | điều phối | **Application** | use case + `PipelineService`, interface |
 | `config.py` | cấu hình YAML | **Application/Web** | `IOptions<T>` + `appsettings.json` |
 | `camera.py` | OpenCV VideoCapture | **Infrastructure** | `OpenCvVideoSource : IVideoSource` |
-| `face_engine.py`, `recognizers.py`, `liveness.py` | model AI | **Infrastructure** | OpenCvSharp + ONNX Runtime |
+| `face_engine.py`, `recognizers.py`, `liveness.py` | model AI | **Infrastructure** | `OpenCvFaceAnalyzer` (OpenCvSharp + ONNX Runtime) |
 | `storage.py` (SQL) | SQLite | **Infrastructure** | EF Core `DbContext` + Repository |
 | `web/app.py` | FastAPI | **Web** | ASP.NET Core Minimal API (giữ nguyên UI `static/`) |
 | `__main__.py` | ráp nối | **Web** | `Program.cs` |
@@ -96,10 +96,11 @@ Cả hai phụ thuộc vào abstraction → chiều phụ thuộc **bị đảo 
 | **SRP** | Tracker chỉ bám mặt; Decider chỉ quyết định; Gallery chỉ so khớp | Domain — Bài 01 |
 | **OCP + Strategy** | `ILivenessPolicy`: Off / Opportunistic / Required thay cho `if mode == ...` | Domain — Bài 01 |
 | **Factory Method** | `LivenessPolicyFactory.Create(mode)`; sau này `IRecognizerFactory` | Domain, Infra |
-| **Strategy** (lần 2) | `IFaceRecognizer`: SFace vs ArcFace đổi bằng config | Infrastructure — Bài 03 |
-| **Abstract Factory** | `IFaceModelSuite`: tạo **trọn bộ** detector + recognizer + liveness tương thích nhau | Infrastructure — Bài 03 |
+| **Abstract Factory** | `IRecognitionModelFamily` (SFace / ArcFace): tạo **trọn bộ** aligner + embedder tương thích nhau | Infrastructure — Bài 03 |
+| **Keyed Services** | chọn họ model theo chuỗi config `"sface"` / `"arcface"` | Infrastructure — Bài 03 |
 | **Repository + Unit of Work** | `IEmployeeRepository`, `IAttendanceRepository` + `IUnitOfWork` (EF Core) | Application khai báo, Infra cài — Bài 02/03 |
-| **Decorator** | `LoggingBehavior` bọc mọi handler; *(Bài 03)* decorator đo thời gian quanh `IFaceAnalyzer` | Application — Bài 02, Infra — Bài 03 |
+| **Decorator** | `LoggingBehavior` bọc mọi handler; `TimingFaceAnalyzer` đo thời gian quanh `IFaceAnalyzer` | Application — Bài 02, Infra — Bài 03 |
+| **Chuyển tiếp DI (forwarding)** | `IUnitOfWork` → đúng DbContext của scope; camera vừa `IVideoSource` vừa `IHostedService` | Infrastructure — Bài 03 |
 | **Mediator / CQRS** | Mediator tự viết (`ISender`), 11 Command/Query; phía đọc qua `IReportQueries` → DTO | Application — Bài 02 |
 | **Factory dạng interface** | `IFaceAnalyzerFactory` — so sánh với `LivenessPolicyFactory` dạng static | Application — Bài 02 |
 | **Abstraction thời gian** | `TimeProvider` (.NET 8) + `LocalClock` thay cho `DateTimeOffset.Now` | Application — Bài 02 |
@@ -117,7 +118,7 @@ Cả hai phụ thuộc vào abstraction → chiều phụ thuộc **bị đảo 
 | 00 | Tổng quan (bài này) | ✅ |
 | 01 | Domain: entity, value object, tracker, decider, Strategy | ✅ code + 36 test |
 | 02 | Application: interface (port), use case, pipeline điều phối, CQRS, Mediator, DI lifetimes | ✅ code + 17 test |
-| 03 | Infrastructure: OpenCvSharp, ONNX, EF Core, Repository, Decorator, Abstract Factory | ⏳ |
+| 03 | Infrastructure: OpenCvSharp, ONNX, EF Core, Repository, Decorator, Abstract Factory | ✅ code + 28 test, đối chiếu khớp bản Python |
 | 04 | Web: Program.cs, DI lifetimes, BackgroundService, Minimal API, MJPEG, Basic Auth | ⏳ |
 
 Mỗi bài: đọc code theo thứ tự gợi ý → chạy test → làm bài tập nhỏ cuối bài.

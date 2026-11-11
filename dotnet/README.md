@@ -9,7 +9,8 @@ dotnet/
 ├── docs/                         ← bài giảng, đọc theo thứ tự
 │   ├── 00-kien-truc-tong-quan.md
 │   ├── 01-domain.md
-│   └── 02-application.md
+│   ├── 02-application.md
+│   └── 03-infrastructure.md
 ├── src/
 │   ├── CameraAI.Domain/          lõi nghiệp vụ, không phụ thuộc gì
 │   ├── CameraAI.Application/     use case + interface        (→ Domain)
@@ -17,7 +18,8 @@ dotnet/
 │   └── CameraAI.Web/             ASP.NET Core, DI            (→ Application, Infrastructure)
 └── tests/
     ├── CameraAI.Domain.Tests/
-    └── CameraAI.Application.Tests/
+    ├── CameraAI.Application.Tests/
+    └── CameraAI.Infrastructure.Tests/   (SQLite thật + model thật nếu có trong ../models)
 ```
 
 ```powershell
@@ -30,7 +32,7 @@ dotnet test
 |---|---|
 | Domain | ✅ xong, 36 test |
 | Application | ✅ xong, 17 test |
-| Infrastructure | ⏳ |
+| Infrastructure | ✅ xong, 28 test; kết quả AI khớp bản Python (cosine ≥ 0,999999) |
 | Web | ⏳ (hiện là template trống) |
 
 Model ONNX dùng chung thư mục `../models` với bản Python.
