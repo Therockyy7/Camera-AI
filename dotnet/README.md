@@ -12,7 +12,8 @@ dotnet/
 │   ├── 01-domain.md
 │   ├── 02-application.md
 │   ├── 03-infrastructure.md
-│   └── 04-web.md
+│   ├── 04-web.md
+│   └── 05-luong-chay.html        ← sơ đồ toàn bộ luồng chạy (mở bằng trình duyệt)
 ├── src/
 │   ├── CameraAI.Domain/          lõi nghiệp vụ, không phụ thuộc gì
 │   ├── CameraAI.Application/     use case + interface        (→ Domain)

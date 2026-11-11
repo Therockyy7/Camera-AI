@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0} :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} [hidden]{display:none!important}</style>
+<title>Luồng chạy CameraAI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: một cột đọc, mỗi luồng là một hình chia cột theo 4 tầng Clean Architecture, thời gian chạy từ trên xuống. */
+:root {
+  --bg: #f4f6f9; --fig: #ffffff; --ink: #19202b; --muted: #596374; --line: #cfd5df; --edge: #3d4757;
+  --lane-a: #f7f8fb; --lane-b: #eef1f6;
+  --web: #6a4ed6; --web-bg: #efebfd;
+  --app: #1d6bd0; --app-bg: #e6effc;
+  --dom: #0f8466; --dom-bg: #e1f4ed;
+  --inf: #b06700; --inf-bg: #fcf0dd;
+  --bad: #c43a2f; --bad-bg: #fdeceb;
+  --good: #1f8a3d; --good-bg: #e4f5e8;
+  --sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151b; --fig: #171c24; --ink: #e5e9f0; --muted: #9ba5b5; --line: #343c49; --edge: #b4bdcb;
+    --lane-a: #161b22; --lane-b: #1b212a;
+    --web: #a592ff; --web-bg: #251f3f; --app: #6ea9ff; --app-bg: #152539;
+    --dom: #43c79f; --dom-bg: #10302a; --inf: #f2a845; --inf-bg: #33270f;
+    --bad: #ff7b6f; --bad-bg: #3a1d1b; --good: #5fd27e; --good-bg: #133220;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151b; --fig: #171c24; --ink: #e5e9f0; --muted: #9ba5b5; --line: #343c49; --edge: #b4bdcb;
+  --lane-a: #161b22; --lane-b: #1b212a;
+  --web: #a592ff; --web-bg: #251f3f; --app: #6ea9ff; --app-bg: #152539;
+  --dom: #43c79f; --dom-bg: #10302a; --inf: #f2a845; --inf-bg: #33270f;
+  --bad: #ff7b6f; --bad-bg: #3a1d1b; --good: #5fd27e; --good-bg: #133220;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 1040px; margin: 0 auto; padding-block: 40px 72px; display: grid; gap: 56px; }
+header { display: grid; gap: 14px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 22px; line-height: 1.25; margin: 0; font-weight: 700; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); font-size: 16px; }
+code { font-family: var(--mono); font-size: .88em; background: var(--lane-b); padding: 1px 5px; border-radius: 4px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+.legend .web i { border-color: var(--web); background: var(--web-bg); }
+.legend .app i { border-color: var(--app); background: var(--app-bg); }
+.legend .dom i { border-color: var(--dom); background: var(--dom-bg); }
+.legend .inf i { border-color: var(--inf); background: var(--inf-bg); }
+.legend .bad i { border-color: var(--bad); background: var(--bad-bg); border-style: dashed; }
+
+nav { display: flex; flex-wrap: wrap; gap: 8px; }
+nav a {
+  font-size: 13px; color: var(--ink); text-decoration: none; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--fig);
+}
+nav a:hover { border-color: var(--edge); }
+nav a:focus-visible, .scroll:focus-visible { outline: 2px solid var(--app); outline-offset: 2px; }
+
+section { display: grid; gap: 16px; scroll-margin-top: 16px; }
+figure { margin: 0; background: var(--fig); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.scroll { overflow-x: auto; }
+figcaption { padding: 12px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+.notes { display: grid; gap: 6px; margin: 0; padding-left: 20px; max-width: 76ch; }
+.notes li::marker { color: var(--muted); }
+
+svg.flow { display: block; width: 100%; height: auto; min-width: 780px; color: var(--edge); font-family: var(--sans); }
+svg .lane-a { fill: var(--lane-a); } svg .lane-b { fill: var(--lane-b); }
+svg .sep { stroke: var(--line); stroke-width: 1; }
+svg .lh { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; }
+svg .lh.web { fill: var(--web); } svg .lh.app { fill: var(--app); } svg .lh.dom { fill: var(--dom); } svg .lh.inf { fill: var(--inf); }
+svg .head { font-size: 12px; font-weight: 600; fill: var(--muted); }
+svg .n rect { stroke-width: 1.4; }
+svg .n.web rect { fill: var(--web-bg); stroke: var(--web); }
+svg .n.app rect { fill: var(--app-bg); stroke: var(--app); }
+svg .n.dom rect { fill: var(--dom-bg); stroke: var(--dom); }
+svg .n.inf rect { fill: var(--inf-bg); stroke: var(--inf); }
+svg .n.q rect { fill: var(--fig); stroke: var(--dom); stroke-dasharray: 4 3; }
+svg .n.good rect { fill: var(--good-bg); stroke: var(--good); stroke-width: 2; }
+svg .n.bad rect, svg .n.stop rect { fill: var(--bad-bg); stroke: var(--bad); }
+svg .n.mute rect { fill: var(--lane-b); stroke: var(--line); }
+svg .t { font-family: var(--mono); font-size: 12px; font-weight: 600; fill: var(--ink); }
+svg .s { font-size: 11px; fill: var(--muted); }
+svg .e { fill: none; stroke: var(--edge); stroke-width: 1.4; }
+svg .e.loop { stroke-dasharray: 5 4; }
+svg .e.err { stroke: var(--bad); stroke-dasharray: 6 4; }
+svg .el { font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--fig); stroke-width: 4px; stroke-linejoin: round; }
+svg .el.err { fill: var(--bad); font-weight: 600; }
+svg .mk { fill: var(--edge); } svg .mk-bad { fill: var(--bad); }
+svg .grp { fill: none; stroke: var(--line); stroke-dasharray: 5 4; }
+
+.table-wrap { overflow-x: auto; background: var(--fig); border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--lane-b); }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">CameraAI .NET · Clean Architecture</div>
+    <h1>Luồng chạy CameraAI</h1>
+    <p class="lead">Toàn bộ đường đi của ứng dụng chấm công: từ lúc <code>dotnet run</code>, qua từng frame webcam, tới lúc một
+      người được ghi chấm công và hiện trên trình duyệt. Mỗi hình chia cột theo 4 tầng; thời gian chạy từ trên xuống, mũi tên
+      sang ngang là lúc luồng băng qua ranh giới tầng.</p>
+    <div class="legend" aria-label="Chú thích màu">
+      <span class="web"><i></i>Web</span>
+      <span class="app"><i></i>Application</span>
+      <span class="dom"><i></i>Domain</span>
+      <span class="inf"><i></i>Infrastructure</span>
+      <span class="bad"><i></i>Lỗi / giả mạo</span>
+    </div>
+    <nav aria-label="Các luồng">
+      <a href="#khoi-dong">Khởi động</a>
+      <a href="#mot-frame">Một frame camera</a>
+      <a href="#quyet-dinh">Quyết định chấm công</a>
+      <a href="#request">Một request HTTP</a>
+      <a href="#dang-ky">Đăng ký khuôn mặt</a>
+      <a href="#song-song">Chạy song song</a>
+    </nav>
+  </header>
+
+  <!-- ================= KHỞI ĐỘNG ================= -->
+  <section id="khoi-dong">
+    <h2>Khởi động: từ <code>dotnet run</code> tới lúc nhận request</h2>
+    <figure>
+      <div class="scroll" tabindex="0">
+        <svg class="flow" viewBox="0 0 960 430" role="img"
+             aria-label="Program.cs cấu hình, đăng ký DI, Build rồi Run; host khởi động lần lượt camera, StartupTasks, PipelineWorker và Kestrel; Ctrl+C dừng theo thứ tự ngược.">
+          <defs>
+            <marker id="mA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+          </defs>
+          <text class="head" x="20" y="22">Program.cs — chạy từ trên xuống</text>
+          <g class="n web"><rect x="20" y="36" width="300" height="52" rx="8"/><text class="t" x="170" y="57" text-anchor="middle">1 · Cấu hình</text><text class="s" x="170" y="75" text-anchor="middle">appsettings → env kiểu Python → --source</text></g>
+          <g class="n web"><rect x="20" y="108" width="300" height="52" rx="8"/><text class="t" x="170" y="129" text-anchor="middle">2 · Đăng ký DI</text><text class="s" x="170" y="147" text-anchor="middle">AddApplication() · AddInfrastructure()</text></g>
+          <g class="n web"><rect x="20" y="180" width="300" height="52" rx="8"/><text class="t" x="170" y="201" text-anchor="middle">3 · Build()</text><text class="s" x="170" y="219" text-anchor="middle">dựng container, middleware, endpoint</text></g>
+          <g class="n web"><rect x="20" y="252" width="300" height="52" rx="8"/><text class="t" x="170" y="273" text-anchor="middle">4 · app.Run()</text><text class="s" x="170" y="291" text-anchor="middle">ValidateOnStart: cấu hình sai → dừng</text></g>
+          <path class="e" d="M170 88V108" marker-end="url(#mA)"/>
+          <path class="e" d="M170 160V180" marker-end="url(#mA)"/>
+          <path class="e" d="M170 232V252" marker-end="url(#mA)"/>
+
+          <text class="head" x="400" y="22">Hosted service — host chạy lần lượt, chờ cái trước xong</text>
+          <rect class="grp" x="380" y="30" width="560" height="290" rx="10"/>
+          <g class="n inf"><rect x="400" y="42" width="520" height="52" rx="8"/><text class="t" x="660" y="63" text-anchor="middle">① OpenCvVideoSource</text><text class="s" x="660" y="81" text-anchor="middle">BackgroundService · thread riêng đọc webcam, giữ frame mới nhất</text></g>
+          <g class="n web"><rect x="400" y="114" width="520" height="52" rx="8"/><text class="t" x="660" y="135" text-anchor="middle">② StartupTasks</text><text class="s" x="660" y="153" text-anchor="middle">EnsureCreated + WAL · Reindex nạp model (thiếu .onnx → app dừng)</text></g>
+          <g class="n web"><rect x="400" y="186" width="520" height="52" rx="8"/><text class="t" x="660" y="207" text-anchor="middle">③ PipelineWorker</text><text class="s" x="660" y="225" text-anchor="middle">PrimeAsync: khôi phục cooldown, nạp gallery → vòng lặp xử lý frame</text></g>
+          <g class="n web"><rect x="400" y="258" width="520" height="52" rx="8"/><text class="t" x="660" y="279" text-anchor="middle">④ Kestrel :8000</text><text class="s" x="660" y="297" text-anchor="middle">bắt đầu nhận HTTP từ trình duyệt</text></g>
+          <path class="e" d="M660 94V114" marker-end="url(#mA)"/><text class="el" x="670" y="108">chờ StartAsync xong</text>
+          <path class="e" d="M660 166V186" marker-end="url(#mA)"/><text class="el" x="670" y="180">chờ xong (DB đã có)</text>
+          <path class="e" d="M660 238V258" marker-end="url(#mA)"/><text class="el" x="670" y="252">vòng lặp chạy nền</text>
+
+          <path class="e" d="M320 278H350V68H400" marker-end="url(#mA)"/>
+          <text class="el" x="362" y="173" text-anchor="middle" transform="rotate(-90 362 173)">khởi động host</text>
+
+          <path class="e err" d="M660 320V356" marker-end="url(#mA)"/><text class="el err" x="670" y="342">khi tắt</text>
+          <g class="n stop"><rect x="20" y="356" width="920" height="58" rx="8"/><text class="t" x="480" y="380" text-anchor="middle">Ctrl+C → ApplicationStopping</text><text class="s" x="480" y="400" text-anchor="middle">luồng MJPEG dừng ngay · pipeline thoát vòng lặp · StopAsync theo thứ tự ngược ④ → ①</text></g>
+        </svg>
+      </div>
+      <figcaption>Hosted service khởi động đúng thứ tự đăng ký, và host chờ <code>StartAsync</code> của cái trước xong mới gọi cái sau.
+        Vì vậy DB và model luôn sẵn sàng trước khi pipeline đọc frame đầu tiên.</figcaption>
+    </figure>
+    <ul class="notes">
+      <li>Nếu cấu hình sai (vd mở ra LAN mà không đặt mật khẩu), <code>ValidateOnStart</code> dừng app <b>trước</b> khi có hosted service nào chạy.</li>
+      <li>File: <code>Web/Program.cs</code>, <code>Web/Hosting/StartupTasks.cs</code>, <code>Web/Hosting/PipelineWorker.cs</code>.</li>
+    </ul>
+  </section>
+
+  <!-- ================= MỘT FRAME ================= -->
+  <section id="mot-frame">
+    <h2>Một frame camera: từ webcam tới khung tên trên màn hình</h2>
+    <figure>
+      <div class="scroll" tabindex="0">
+        <svg class="flow" viewBox="0 0 980 1016" role="img"
+             aria-label="Thread camera giữ frame mới nhất; pipeline lấy bản sao, Infrastructure phát hiện và đo mặt, Domain kiểm chất lượng, Infrastructure tính điểm thật và embedding, Domain so gallery, bám vệt và quyết định; nếu có quyết định thì lưu ảnh và DB; sau đó vẽ nhãn, encode JPEG và phát qua MJPEG; lặp lại mỗi khoảng 125 ms.">
+          <defs>
+            <marker id="mB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+          </defs>
+          <rect class="lane-a" x="0" y="0" width="200" height="1016"/>
+          <rect class="lane-b" x="200" y="0" width="260" height="1016"/>
+          <rect class="lane-a" x="460" y="0" width="260" height="1016"/>
+          <rect class="lane-b" x="720" y="0" width="260" height="1016"/>
+          <text class="lh web" x="100" y="26" text-anchor="middle">WEB</text>
+          <text class="lh app" x="330" y="26" text-anchor="middle">APPLICATION</text>
+          <text class="lh dom" x="590" y="26" text-anchor="middle">DOMAIN</text>
+          <text class="lh inf" x="850" y="26" text-anchor="middle">INFRASTRUCTURE</text>
+          <line class="sep" x1="0" y1="40" x2="980" y2="40"/>
+
+          <!-- nút -->
+          <g class="n inf"><rect x="740" y="56" width="220" height="46" rx="8"/><text class="t" x="850" y="75" text-anchor="middle">OpenCvVideoSource</text><text class="s" x="850" y="91" text-anchor="middle">thread riêng · giữ frame mới nhất</text></g>
+          <g class="n app"><rect x="220" y="120" width="220" height="46" rx="8"/><text class="t" x="330" y="139" text-anchor="middle">AttendancePipeline</text><text class="s" x="330" y="155" text-anchor="middle">vòng lặp 8 frame/giây</text></g>
+          <g class="n inf"><rect x="740" y="184" width="220" height="46" rx="8"/><text class="t" x="850" y="203" text-anchor="middle">OpenCvFaceAnalyzer</text><text class="s" x="850" y="219" text-anchor="middle">YuNet tìm mặt · đo quay, độ nét</text></g>
+          <g class="n dom"><rect x="480" y="248" width="220" height="46" rx="8"/><text class="t" x="590" y="267" text-anchor="middle">RecognitionGate</text><text class="s" x="590" y="283" text-anchor="middle">đủ to? chạm mép? nghiêng? mờ?</text></g>
+          <g class="n inf"><rect x="740" y="312" width="220" height="46" rx="8"/><text class="t" x="850" y="331" text-anchor="middle">MiniFASNet + SFace</text><text class="s" x="850" y="347" text-anchor="middle">điểm mặt thật + embedding 128 số</text></g>
+          <g class="n app"><rect x="220" y="376" width="220" height="46" rx="8"/><text class="t" x="330" y="395" text-anchor="middle">FaceObservation[]</text><text class="s" x="330" y="411" text-anchor="middle">kết quả từng mặt trên frame</text></g>
+          <g class="n dom"><rect x="480" y="440" width="220" height="46" rx="8"/><text class="t" x="590" y="459" text-anchor="middle">FaceGallery.Match</text><text class="s" x="590" y="475" text-anchor="middle">cosine cao nhất ≥ 0,363 ?</text></g>
+          <g class="n dom"><rect x="480" y="504" width="220" height="46" rx="8"/><text class="t" x="590" y="523" text-anchor="middle">FaceTracker.Update</text><text class="s" x="590" y="539" text-anchor="middle">ghép mặt qua các frame (IoU)</text></g>
+          <g class="n dom"><rect x="480" y="568" width="220" height="46" rx="8"/><text class="t" x="590" y="587" text-anchor="middle">AttendanceDecider</text><text class="s" x="590" y="603" text-anchor="middle">giả mạo? ≥ 3/5 phiếu? người lạ?</text></g>
+          <g class="n app"><rect x="220" y="632" width="220" height="46" rx="8"/><text class="t" x="330" y="651" text-anchor="middle">RecordAsync</text><text class="s" x="330" y="667" text-anchor="middle">có Decision → mở scope ngắn</text></g>
+          <g class="n inf"><rect x="740" y="696" width="220" height="46" rx="8"/><text class="t" x="850" y="715" text-anchor="middle">FileStore · Repo · UoW</text><text class="s" x="850" y="731" text-anchor="middle">ảnh vào data/ · INSERT SQLite</text></g>
+          <g class="n app"><rect x="220" y="760" width="220" height="46" rx="8"/><text class="t" x="330" y="779" text-anchor="middle">FaceLabeler</text><text class="s" x="330" y="795" text-anchor="middle">chữ + màu cho từng khung</text></g>
+          <g class="n inf"><rect x="740" y="824" width="220" height="46" rx="8"/><text class="t" x="850" y="843" text-anchor="middle">OpenCvImaging</text><text class="s" x="850" y="859" text-anchor="middle">vẽ khung, encode JPEG</text></g>
+          <g class="n app"><rect x="220" y="888" width="220" height="46" rx="8"/><text class="t" x="330" y="907" text-anchor="middle">pipeline.Latest</text><text class="s" x="330" y="923" text-anchor="middle">JPEG mới nhất (volatile)</text></g>
+          <g class="n web"><rect x="20" y="952" width="160" height="46" rx="8"/><text class="t" x="100" y="971" text-anchor="middle">/stream.mjpg</text><text class="s" x="100" y="987" text-anchor="middle">&lt;img&gt; tự thành video</text></g>
+
+          <!-- cạnh -->
+          <path class="e" d="M850 102V143H440" marker-end="url(#mB)"/><text class="el" x="645" y="137" text-anchor="middle">bản sao frame (TryGetLatest)</text>
+          <path class="e" d="M330 166V207H740" marker-end="url(#mB)"/><text class="el" x="590" y="201" text-anchor="middle">Analyze(frame)</text>
+          <path class="e" d="M850 230V271H700" marker-end="url(#mB)"/><text class="el" x="775" y="265" text-anchor="middle">đo xong → hỏi luật</text>
+          <path class="e" d="M590 294V335H740" marker-end="url(#mB)"/><text class="el" x="665" y="329" text-anchor="middle">dùng được</text>
+          <path class="e" d="M850 358V399H440" marker-end="url(#mB)"/><text class="el" x="645" y="393" text-anchor="middle">List&lt;FaceObservation&gt;</text>
+          <path class="e" d="M330 422V463H480" marker-end="url(#mB)"/><text class="el" x="405" y="457" text-anchor="middle">embedding</text>
+          <path class="e" d="M590 486V504" marker-end="url(#mB)"/>
+          <path class="e" d="M590 550V568" marker-end="url(#mB)"/>
+          <path class="e" d="M590 614V655H440" marker-end="url(#mB)"/><text class="el" x="515" y="649" text-anchor="middle">Decision?</text>
+          <path class="e" d="M330 678V719H740" marker-end="url(#mB)"/><text class="el" x="590" y="713" text-anchor="middle">nếu có: lưu ảnh + sự kiện</text>
+          <path class="e" d="M330 719V760" marker-end="url(#mB)"/><text class="el" x="338" y="748">luôn vẽ nhãn</text>
+          <path class="e" d="M330 806V847H740" marker-end="url(#mB)"/><text class="el" x="590" y="841" text-anchor="middle">EncodeAnnotated</text>
+          <path class="e" d="M850 870V911H440" marker-end="url(#mB)"/><text class="el" x="645" y="905" text-anchor="middle">JPEG</text>
+          <path class="e" d="M330 934V975H180" marker-end="url(#mB)"/><text class="el" x="255" y="969" text-anchor="middle">đọc mỗi 30 ms</text>
+          <path class="e loop" d="M220 911H206V143H220" marker-end="url(#mB)"/>
+          <text class="el" x="198" y="527" text-anchor="middle" transform="rotate(-90 198 527)">frame kế tiếp · khoảng 125 ms</text>
+        </svg>
+      </div>
+      <figcaption>Pipeline ở cột Application không tự làm việc nặng nào: nó gọi Infrastructure để <b>đo</b> (AI, ảnh, DB) và gọi Domain để
+        <b>quyết</b> (luật chất lượng, so khớp, bỏ phiếu). Mọi mũi tên sang ngang đều đi qua một interface.</figcaption>
+    </figure>
+    <ul class="notes">
+      <li>Analyzer không tự so gallery: nó chỉ trả embedding, còn <code>FaceGallery.Match</code> nằm ở Domain.</li>
+      <li>Ghi DB mở một scope ngắn bằng <code>IServiceScopeFactory</code>, vì pipeline là Singleton còn DbContext là Scoped.</li>
+      <li>File: <code>Application/Pipeline/AttendancePipeline.cs</code>, <code>Infrastructure/Vision/OpenCvFaceAnalyzer.cs</code>.</li>
+    </ul>
+  </section>
+
+  <!-- ================= QUYẾT ĐỊNH ================= -->
+  <section id="quyet-dinh">
+    <h2>Bên trong <code>AttendanceDecider.Evaluate</code></h2>
+    <figure>
+      <div class="scroll" tabindex="0">
+        <svg class="flow" viewBox="0 0 960 510" role="img"
+             aria-label="Từ 5 quan sát gần nhất: nếu giả mạo thì ghi Spoof; nếu không, policy lọc frame được bỏ phiếu; đủ 3 phiếu cho một người thì kiểm cooldown 5 phút, quá thì ghi Attendance; không đủ phiếu thì kiểm người lạ.">
+          <defs>
+            <marker id="mC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+          </defs>
+          <g class="n dom"><rect x="20" y="200" width="150" height="54" rx="8"/><text class="t" x="95" y="223" text-anchor="middle">Track.History</text><text class="s" x="95" y="241" text-anchor="middle">5 quan sát gần nhất</text></g>
+          <g class="n q"><rect x="210" y="200" width="200" height="54" rx="8"/><text class="t" x="310" y="223" text-anchor="middle">Giả mạo?</text><text class="s" x="310" y="241" text-anchor="middle">≥ 5 frame đã kiểm, TB &lt; 0,3</text></g>
+          <g class="n bad"><rect x="210" y="40" width="200" height="54" rx="8"/><text class="t" x="310" y="63" text-anchor="middle">Spoof</text><text class="s" x="310" y="81" text-anchor="middle">ghi rejected_events + ảnh</text></g>
+          <g class="n dom"><rect x="450" y="200" width="200" height="54" rx="8"/><text class="t" x="550" y="223" text-anchor="middle">ILivenessPolicy</text><text class="s" x="550" y="241" text-anchor="middle">Strategy: frame nào được bầu</text></g>
+          <g class="n q"><rect x="690" y="200" width="250" height="54" rx="8"/><text class="t" x="815" y="223" text-anchor="middle">≥ 3 phiếu cho 1 người?</text><text class="s" x="815" y="241" text-anchor="middle">người nhiều phiếu nhất</text></g>
+          <g class="n q"><rect x="690" y="40" width="250" height="54" rx="8"/><text class="t" x="815" y="63" text-anchor="middle">Người lạ?</text><text class="s" x="815" y="81" text-anchor="middle">đủ 5 frame, không khớp ai</text></g>
+          <text class="el" x="815" y="26" text-anchor="middle">không → trả null, chờ frame sau</text>
+          <g class="n bad"><rect x="450" y="40" width="200" height="54" rx="8"/><text class="t" x="550" y="63" text-anchor="middle">Unknown</text><text class="s" x="550" y="81" text-anchor="middle">ghi rejected_events + ảnh</text></g>
+          <g class="n q"><rect x="690" y="330" width="250" height="54" rx="8"/><text class="t" x="815" y="353" text-anchor="middle">Đã chấm &lt; 5 phút?</text><text class="s" x="815" y="371" text-anchor="middle">cooldown theo từng nhân viên</text></g>
+          <g class="n mute"><rect x="450" y="330" width="200" height="54" rx="8"/><text class="t" x="550" y="353" text-anchor="middle">Không ghi lại</text><text class="s" x="550" y="371" text-anchor="middle">vẫn hiện khung xanh</text></g>
+          <g class="n good"><rect x="690" y="440" width="250" height="54" rx="8"/><text class="t" x="815" y="463" text-anchor="middle">Attendance</text><text class="s" x="815" y="481" text-anchor="middle">ghi attendance_events + ảnh</text></g>
+
+          <path class="e" d="M170 227H210" marker-end="url(#mC)"/>
+          <path class="e" d="M310 200V94" marker-end="url(#mC)"/><text class="el" x="318" y="152">có</text>
+          <path class="e" d="M410 227H450" marker-end="url(#mC)"/><text class="el" x="430" y="219" text-anchor="middle">không</text>
+          <path class="e" d="M650 227H690" marker-end="url(#mC)"/>
+          <path class="e" d="M815 200V94" marker-end="url(#mC)"/><text class="el" x="823" y="152">không</text>
+          <path class="e" d="M690 67H650" marker-end="url(#mC)"/><text class="el" x="670" y="59" text-anchor="middle">có</text>
+          <path class="e" d="M815 254V330" marker-end="url(#mC)"/><text class="el" x="823" y="296">có</text>
+          <path class="e" d="M690 357H650" marker-end="url(#mC)"/><text class="el" x="670" y="349" text-anchor="middle">có</text>
+          <path class="e" d="M815 384V440" marker-end="url(#mC)"/><text class="el" x="823" y="416">không</text>
+        </svg>
+      </div>
+      <figcaption>Toàn bộ hình này là code C# thuần ở tầng Domain, nên 36 test chạy được mà không cần camera hay model.
+        Mỗi loại quyết định chỉ đưa ra một lần cho mỗi vệt (<code>track.Done</code>).</figcaption>
+    </figure>
+    <ul class="notes">
+      <li><code>ILivenessPolicy</code> là chỗ Strategy thay cho <code>if mode == …</code>: <i>Off</i> cho mọi frame bầu, <i>Opportunistic</i> loại frame đã kiểm là giả, <i>Required</i> chỉ nhận frame đã kiểm là thật.</li>
+      <li>File: <code>Domain/Attendance/AttendanceDecider.cs</code>, <code>Domain/Attendance/LivenessPolicies.cs</code>.</li>
+    </ul>
+  </section>
+
+  <!-- ================= REQUEST HTTP ================= -->
+  <section id="request">
+    <h2>Một request HTTP qua 4 tầng: thêm nhân viên</h2>
+    <figure>
+      <div class="scroll" tabindex="0">
+        <svg class="flow" viewBox="0 0 980 824" role="img"
+             aria-label="Request POST đi qua ExceptionHandler, BasicAuth, endpoint; endpoint gửi Command qua ISender và LoggingBehavior tới handler; handler hỏi repository, gọi Employee.Create của Domain, lưu bằng DbContext; trả 201. Nếu mã trùng, Domain ném lỗi và ExceptionHandler trả 409.">
+          <defs>
+            <marker id="mD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+            <marker id="mDe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk-bad"/></marker>
+          </defs>
+          <rect class="lane-a" x="0" y="0" width="200" height="824"/>
+          <rect class="lane-b" x="200" y="0" width="260" height="824"/>
+          <rect class="lane-a" x="460" y="0" width="260" height="824"/>
+          <rect class="lane-b" x="720" y="0" width="260" height="824"/>
+          <text class="lh web" x="100" y="26" text-anchor="middle">WEB</text>
+          <text class="lh app" x="330" y="26" text-anchor="middle">APPLICATION</text>
+          <text class="lh dom" x="590" y="26" text-anchor="middle">DOMAIN</text>
+          <text class="lh inf" x="850" y="26" text-anchor="middle">INFRASTRUCTURE</text>
+          <line class="sep" x1="0" y1="40" x2="980" y2="40"/>
+
+          <g class="n web"><rect x="20" y="56" width="160" height="46" rx="8"/><text class="t" x="100" y="75" text-anchor="middle">Trình duyệt</text><text class="s" x="100" y="91" text-anchor="middle">POST /api/employees</text></g>
+          <g class="n web"><rect x="20" y="120" width="160" height="46" rx="8"/><text class="t" x="100" y="139" text-anchor="middle">ExceptionHandler</text><text class="s" x="100" y="155" text-anchor="middle">bọc mọi lớp bên trong</text></g>
+          <g class="n web"><rect x="20" y="184" width="160" height="46" rx="8"/><text class="t" x="100" y="203" text-anchor="middle">BasicAuth</text><text class="s" x="100" y="219" text-anchor="middle">sai mật khẩu → 401</text></g>
+          <g class="n web"><rect x="20" y="248" width="160" height="46" rx="8"/><text class="t" x="100" y="267" text-anchor="middle">MapPost</text><text class="s" x="100" y="283" text-anchor="middle">bind JSON snake_case</text></g>
+          <g class="n app"><rect x="220" y="312" width="220" height="46" rx="8"/><text class="t" x="330" y="331" text-anchor="middle">ISender.Send</text><text class="s" x="330" y="347" text-anchor="middle">Mediator tìm đúng handler</text></g>
+          <g class="n app"><rect x="220" y="376" width="220" height="46" rx="8"/><text class="t" x="330" y="395" text-anchor="middle">LoggingBehavior</text><text class="s" x="330" y="411" text-anchor="middle">Decorator: log + đo thời gian</text></g>
+          <g class="n app"><rect x="220" y="440" width="180" height="238" rx="8"/><text class="t" x="310" y="463" text-anchor="middle">CreateEmployeeHandler</text><text class="s" x="310" y="480" text-anchor="middle">điều phối use case</text></g>
+          <g class="n inf"><rect x="740" y="504" width="220" height="46" rx="8"/><text class="t" x="850" y="523" text-anchor="middle">EmployeeRepository</text><text class="s" x="850" y="539" text-anchor="middle">SELECT … WHERE code = @code</text></g>
+          <g class="n dom"><rect x="480" y="568" width="220" height="46" rx="8"/><text class="t" x="590" y="587" text-anchor="middle">Employee.Create()</text><text class="s" x="590" y="603" text-anchor="middle">trim + kiểm mã, tên</text></g>
+          <g class="n inf"><rect x="740" y="632" width="220" height="46" rx="8"/><text class="t" x="850" y="651" text-anchor="middle">CameraAiDbContext</text><text class="s" x="850" y="667" text-anchor="middle">INSERT · một transaction</text></g>
+          <g class="n web"><rect x="20" y="696" width="160" height="46" rx="8"/><text class="t" x="100" y="715" text-anchor="middle">Results.Created</text><text class="s" x="100" y="731" text-anchor="middle">201 + EmployeeDto</text></g>
+          <g class="n web"><rect x="20" y="760" width="160" height="46" rx="8"/><text class="t" x="100" y="779" text-anchor="middle">Trình duyệt</text><text class="s" x="100" y="795" text-anchor="middle">tải lại danh sách</text></g>
+
+          <path class="e" d="M100 102V120" marker-end="url(#mD)"/>
+          <path class="e" d="M100 166V184" marker-end="url(#mD)"/>
+          <path class="e" d="M100 230V248" marker-end="url(#mD)"/>
+          <path class="e" d="M100 294V335H220" marker-end="url(#mD)"/><text class="el" x="160" y="329" text-anchor="middle">Command</text>
+          <path class="e" d="M330 358V376" marker-end="url(#mD)"/>
+          <path class="e" d="M330 422V440" marker-end="url(#mD)"/>
+          <path class="e" d="M400 527H740" marker-end="url(#mD)"/><text class="el" x="660" y="521" text-anchor="middle">FindByCodeAsync</text>
+          <path class="e" d="M400 591H480" marker-end="url(#mD)"/><text class="el" x="440" y="583" text-anchor="middle">chưa có</text>
+          <path class="e" d="M400 655H740" marker-end="url(#mD)"/><text class="el" x="660" y="649" text-anchor="middle">Add + SaveChanges</text>
+          <path class="e" d="M310 678V719H180" marker-end="url(#mD)"/><text class="el" x="245" y="713" text-anchor="middle">EmployeeDto</text>
+          <path class="e" d="M100 742V760" marker-end="url(#mD)"/>
+
+          <path class="e err" d="M590 568V143H180" marker-end="url(#mDe)"/>
+          <text class="el err" x="385" y="137" text-anchor="middle">mã đã có → DuplicateEmployeeException</text>
+          <text class="el err" x="385" y="159" text-anchor="middle">→ 409 + "detail"</text>
+        </svg>
+      </div>
+      <figcaption>Endpoint chỉ đổi HTTP thành <code>CreateEmployeeCommand</code>; quy tắc nằm ở <code>Employee</code> (Domain).
+        Đường đứt đỏ: lỗi nghiệp vụ bay ngược ra ngoài và chỉ được đổi thành mã HTTP ở <code>ApiExceptionHandler</code>.</figcaption>
+    </figure>
+    <ul class="notes">
+      <li>Repository chỉ <code>Add</code> vào change tracker; DB chỉ được ghi khi <code>SaveChangesAsync</code>, và repository với UnitOfWork dùng chung một DbContext của request.</li>
+      <li>File: <code>Web/Endpoints/CameraAiEndpoints.cs</code>, <code>Application/Features/Employees/EmployeeFeatures.cs</code>, <code>Web/Http/ApiExceptionHandler.cs</code>.</li>
+    </ul>
+  </section>
+
+  <!-- ================= ĐĂNG KÝ ================= -->
+  <section id="dang-ky">
+    <h2>Đăng ký khuôn mặt: chụp từ camera tới lúc camera nhận ra người mới</h2>
+    <figure>
+      <div class="scroll" tabindex="0">
+        <svg class="flow" viewBox="0 0 980 760" role="img"
+             aria-label="Bấm chụp gửi CaptureSamplesCommand; FaceEnrollmentService khoá analyzer riêng, lặp lấy frame, kiểm đúng một mặt rõ, bỏ mẫu quá giống mẫu cũ, lưu ảnh và embedding; xong thì GalleryLoader nạp lại gallery, trả kết quả cho trình duyệt, và pipeline nhận ra người mới ngay frame sau.">
+          <defs>
+            <marker id="mE" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+          </defs>
+          <rect class="lane-a" x="0" y="0" width="200" height="760"/>
+          <rect class="lane-b" x="200" y="0" width="260" height="760"/>
+          <rect class="lane-a" x="460" y="0" width="260" height="760"/>
+          <rect class="lane-b" x="720" y="0" width="260" height="760"/>
+          <text class="lh web" x="100" y="26" text-anchor="middle">WEB</text>
+          <text class="lh app" x="330" y="26" text-anchor="middle">APPLICATION</text>
+          <text class="lh dom" x="590" y="26" text-anchor="middle">DOMAIN</text>
+          <text class="lh inf" x="850" y="26" text-anchor="middle">INFRASTRUCTURE</text>
+          <line class="sep" x1="0" y1="40" x2="980" y2="40"/>
+
+          <g class="n web"><rect x="20" y="56" width="160" height="46" rx="8"/><text class="t" x="100" y="75" text-anchor="middle">Tab Nhân viên</text><text class="s" x="100" y="91" text-anchor="middle">bấm “Chụp từ camera”</text></g>
+          <g class="n web"><rect x="20" y="120" width="160" height="46" rx="8"/><text class="t" x="100" y="139" text-anchor="middle">POST …/capture</text><text class="s" x="100" y="155" text-anchor="middle">CaptureSamplesCommand</text></g>
+          <g class="n app"><rect x="220" y="184" width="220" height="46" rx="8"/><text class="t" x="330" y="203" text-anchor="middle">FaceEnrollmentService</text><text class="s" x="330" y="219" text-anchor="middle">CaptureAsync(employeeId)</text></g>
+          <g class="n app"><rect x="220" y="248" width="220" height="46" rx="8"/><text class="t" x="330" y="267" text-anchor="middle">EnrollmentAnalyzer</text><text class="s" x="330" y="283" text-anchor="middle">khoá 1 lượt · bộ model riêng</text></g>
+          <g class="n inf"><rect x="740" y="312" width="220" height="46" rx="8"/><text class="t" x="850" y="331" text-anchor="middle">OpenCvVideoSource</text><text class="s" x="850" y="347" text-anchor="middle">TryGetLatest → bản sao</text></g>
+          <g class="n inf"><rect x="740" y="376" width="220" height="46" rx="8"/><text class="t" x="850" y="395" text-anchor="middle">OpenCvFaceAnalyzer</text><text class="s" x="850" y="411" text-anchor="middle">cổng chặt hơn: mặt ≥ 80 px</text></g>
+          <g class="n dom"><rect x="480" y="440" width="220" height="46" rx="8"/><text class="t" x="590" y="459" text-anchor="middle">VectorMath.Dot</text><text class="s" x="590" y="475" text-anchor="middle">giống mẫu cũ ≥ 0,92 → bỏ</text></g>
+          <g class="n inf"><rect x="740" y="504" width="220" height="46" rx="8"/><text class="t" x="850" y="523" text-anchor="middle">FileStore + SaveChanges</text><text class="s" x="850" y="539" text-anchor="middle">faces/{id}/… + embedding</text></g>
+          <g class="n app"><rect x="220" y="568" width="220" height="46" rx="8"/><text class="t" x="330" y="587" text-anchor="middle">GalleryLoader.Reload</text><text class="s" x="330" y="603" text-anchor="middle">đọc lại mọi embedding</text></g>
+          <g class="n web"><rect x="20" y="632" width="160" height="46" rx="8"/><text class="t" x="100" y="651" text-anchor="middle">CaptureResult</text><text class="s" x="100" y="667" text-anchor="middle">đã lưu · lý do bỏ</text></g>
+          <g class="n dom"><rect x="480" y="632" width="220" height="46" rx="8"/><text class="t" x="590" y="651" text-anchor="middle">FaceGallery.Load</text><text class="s" x="590" y="667" text-anchor="middle">tráo snapshot, không lock</text></g>
+          <g class="n app"><rect x="220" y="696" width="220" height="46" rx="8"/><text class="t" x="330" y="715" text-anchor="middle">AttendancePipeline</text><text class="s" x="330" y="731" text-anchor="middle">frame sau nhận ra người mới</text></g>
+
+          <path class="e" d="M100 102V120" marker-end="url(#mE)"/>
+          <path class="e" d="M100 166V207H220" marker-end="url(#mE)"/><text class="el" x="160" y="201" text-anchor="middle">ISender</text>
+          <path class="e" d="M330 230V248" marker-end="url(#mE)"/>
+          <path class="e" d="M330 294V335H740" marker-end="url(#mE)"/><text class="el" x="590" y="329" text-anchor="middle">lấy frame</text>
+          <path class="e" d="M850 358V376" marker-end="url(#mE)"/>
+          <path class="e" d="M850 422V463H700" marker-end="url(#mE)"/><text class="el" x="775" y="457" text-anchor="middle">đúng 1 mặt rõ</text>
+          <path class="e" d="M590 486V527H740" marker-end="url(#mE)"/><text class="el" x="665" y="521" text-anchor="middle">khác đủ → lưu</text>
+          <path class="e loop" d="M960 527H970V335H960" marker-end="url(#mE)"/>
+          <text class="el" x="973" y="431" text-anchor="middle" transform="rotate(-90 973 431)">lặp: tối đa 8 mẫu / 15 giây</text>
+          <path class="e" d="M850 550V591H440" marker-end="url(#mE)"/><text class="el" x="645" y="585" text-anchor="middle">xong lượt chụp</text>
+          <path class="e" d="M330 614V655H180" marker-end="url(#mE)"/><text class="el" x="255" y="649" text-anchor="middle">kết quả</text>
+          <path class="e" d="M330 655H480" marker-end="url(#mE)"/><text class="el" x="405" y="649" text-anchor="middle">Load(vectors)</text>
+          <path class="e loop" d="M590 678V719H440" marker-end="url(#mE)"/><text class="el" x="515" y="713" text-anchor="middle">Match() thấy ngay</text>
+        </svg>
+      </div>
+      <figcaption>Việc đăng ký dùng một bộ model riêng (OpenCV DNN không chia sẻ được giữa các thread) và lấy frame từ chính camera đang chạy.
+        Gallery được tráo nguyên khối, nên luồng camera dùng dữ liệu mới ngay frame sau mà không cần lock.</figcaption>
+    </figure>
+    <ul class="notes">
+      <li>Mẫu chỉ được lưu khi khác đủ so với mẫu đã có, nên người dùng cần xoay đầu chậm để gallery phủ nhiều góc mặt.</li>
+      <li>File: <code>Application/Enrollment/FaceEnrollmentService.cs</code>, <code>Application/Faces/GalleryLoader.cs</code>, <code>Domain/Faces/FaceGallery.cs</code>.</li>
+    </ul>
+  </section>
+
+  <!-- ================= SONG SONG ================= -->
+  <section id="song-song">
+    <h2>Ba luồng chạy cùng lúc và thứ chúng dùng chung</h2>
+    <p>Thread camera, vòng pipeline và các request HTTP chạy song song. Bảng dưới là mọi chỗ chúng chạm vào cùng một dữ liệu, và cách mỗi chỗ được giữ an toàn.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Dữ liệu dùng chung</th><th>Ai ghi</th><th>Ai đọc</th><th>An toàn nhờ</th></tr></thead>
+        <tbody>
+          <tr><td>Frame mới nhất <code>_latest</code></td><td>Thread camera, khoảng 10 lần/giây</td><td>Pipeline, chụp mẫu (qua <code>TryGetLatest</code>)</td><td><code>lock</code> và trả bản sao <code>Mat.Clone()</code>, người nhận tự Dispose</td></tr>
+          <tr><td>JPEG mới nhất <code>pipeline.Latest</code></td><td>Vòng pipeline, 8 lần/giây</td><td>Mọi request <code>/stream.mjpg</code></td><td>Tham chiếu <code>volatile</code> tới record bất biến</td></tr>
+          <tr><td><code>FaceGallery</code></td><td>Request thêm/xoá mẫu (<code>GalleryLoader</code>)</td><td>Vòng pipeline (<code>Match</code>)</td><td>Snapshot bất biến, tráo một lần</td></tr>
+          <tr><td>SQLite <code>data/cameraai.db</code></td><td>Pipeline (chấm công), request (thêm, xoá)</td><td>Request (lịch sử), pipeline lúc khởi động (cooldown)</td><td>Mỗi scope một <code>DbContext</code>; chế độ WAL</td></tr>
+          <tr><td>Bộ model AI</td><td>Không ai ghi</td><td>Pipeline và đăng ký mẫu, mỗi bên một bộ</td><td><code>IFaceAnalyzerFactory</code> tạo bộ riêng; <code>EnrollmentAnalyzer</code> có <code>SemaphoreSlim</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+</html>
